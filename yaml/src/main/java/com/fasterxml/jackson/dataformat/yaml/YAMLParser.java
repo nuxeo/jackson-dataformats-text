@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
 import org.yaml.snakeyaml.nodes.NodeId;
@@ -175,7 +176,7 @@ public class YAMLParser extends ParserBase
         _objectCodec = codec;
         _formatFeatures = formatFeatures;
         _reader = reader;
-        _yamlParser = new ParserImpl(new StreamReader(reader));
+        _yamlParser = new ParserImpl(new StreamReader(reader), new LoaderOptions());
         _cfgEmptyStringsToNull = Feature.EMPTY_STRING_AS_NULL.enabledIn(formatFeatures);
     }
 
