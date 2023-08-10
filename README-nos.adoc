@@ -1,0 +1,25 @@
+= NOS patched branch 
+
+[abstract]
+== Abstract
+
+At this time (see last commit), we're solving in the https://github.com/nuxeo/jackson-dataformats-text/tree/nuxeo-nos[branch]
+
+- https://jira.nuxeo.com/browse/NXS-6917[*NXS-6917 resolve jackson-dataformat-yaml classpath issue*]
+
+== Buildind logic injected
+
+We've injected our building logic in the project (direnv, maven extensions, maven profiles) which 
+relate to the NUXEO nos development environment.
+
+We still don't have a CI workflow for this.
+
+=== Releasing
+
+You should provide the version and the maven repository you want to deploy on.
+
+[source,shell]
+ ./mvnw -Djgitver.use-version=?version?-nuxeo-nos -Pnuxeo-packages-release deploy
+
+For more information about, have a look to https://github.com/nuxeo/nos/README.md[*NOS developping documentation*]
+

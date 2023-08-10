@@ -32,6 +32,7 @@
   </issueManagement>
 
   <properties>
+    <published-with-gradle-metadata/>
   </properties>
 
   <dependencies>
@@ -92,8 +93,279 @@
       <plugin>
         <groupId>de.jjohannes</groupId>
         <artifactId>gradle-module-metadata-maven-plugin</artifactId>
+	<version>0.4.0-nuxeo-nos</version>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>skipMavenCache</id>
+      <properties>
+        <maven.build.cache.enabled>false</maven.build.cache.enabled>
+      </properties>
+    </profile>
+    <profile>
+      <id>m2e</id>
+      <activation>
+        <property>
+          <name>m2e.version</name>
+        </property>
+      </activation>
+      <properties>
+        <m2e.profiles.m2e.build.target />
+        <m2e.profiles.m2e.checkstyles-resources />
+        <m2e.profiles.m2e.apt />
+      </properties>
+    </profile>
+    <profile>
+      <id>m2e-build-target</id>
+      <activation>
+        <property>
+          <name>m2e.profiles.m2e.build.target</name>
+        </property>
+      </activation>
+      <build>
+        <directory>target~m2e</directory>
+      </build>
+      <properties>
+        <m2e.profiles.m2e.checkstyles-resources />
+        <m2e.profiles.m2e.apt />
+      </properties>
+    </profile>
+    <profile>
+      <id>m2e-apt</id>
+      <activation>
+        <property>
+          <name>m2e.profiles.m2e.apt</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgument>-proc:none</compilerArgument>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.bsc.maven</groupId>
+            <artifactId>maven-processor-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>process</goal>
+                </goals>
+                <configuration>
+                  <defaultOutputDirectory>${generatedSources}</defaultOutputDirectory>
+                  <processors>
+                    <processor>com.google.auto.value.processor.AutoValueProcessor</processor>
+                  </processors>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>com.google.auto.value</groupId>
+                <artifactId>auto-value-annotations</artifactId>
+              </dependency>
+            </dependencies>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>${generatedSources}</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <generatedSources>${project.build.directory}/generated/annotations</generatedSources>
+      </properties>
+    </profile>
+    <profile>
+      <id>m2e-checkstyle-resources</id>
+      <activation>
+        <property>
+          <name>m2e.profiles.checkstyle-resources</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unpack-checkstyle-rules</id>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>com.nuxeo.nos</groupId>
+                      <artifactId>nos-qa-tools</artifactId>
+                      <version>${nos-qa-tools.version}</version>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <includes>checkstyle/*.xml</includes>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>nuxeo-packages</id>
+      <activation>
+        <property>
+          <name>!disableProfileActivation</name>
+        </property>
+      </activation>
+      <properties>
+        <docker.pull.registry>docker-nos-private.packages.nuxeo.com</docker.pull.registry>
+      </properties>
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>maven-nos-private</id>
+          <url>https://packages.nuxeo.com/repository/maven-nos-private</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>nuxeo-packages-release</id>
+      <activation>
+        <property>
+          <name>m2e.profiles.nuxeo-packages.release</name>
+        </property>
+      </activation>
+      <properties>
+        <altDeploymentRepository>nuxeo-packages.team-packages::https://packages.nuxeo.com/repository/maven-nos-private/</altDeploymentRepository>
+        <altSnapshotDeploymentRepository>nuxeo-packages.team-packages::https://packages.nuxeo.com/repository/maven-nos-private/</altSnapshotDeploymentRepository>
+        <altReleaseDeploymentRepository>nuxeo-packages.team-packages::https://packages.nuxeo.com/repository/maven-nos-private/</altReleaseDeploymentRepository>
+        <m2e.profiles.nuxeo-packages />
+        <m2e.profiles.release />
+        <docker.push.registry>docker-nos-private.packages.nuxeo.com</docker.push.registry>
+      </properties>
+    </profile>
+    <profile>
+      <id>github-nuxeo-nos</id>
+      <activation>
+        <property>
+          <name>m2e.profiles.github.nuxeo.nos</name>
+        </property>
+      </activation>
+      <properties>
+        <m2e.profiles.nuxeo-packages />
+      </properties>
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>github-nuxeo-nos</id>
+          <name>nuxeo/nos github packages repository</name>
+          <url>https://maven.pkg.github.com/nuxeo/nos/</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>github-nuxeo-nos</id>
+          <name>nuxeo/nos github packages repository</name>
+          <url>https://maven.pkg.github.com/nuxeo/nos/</url>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+    <profile>
+      <id>github-nuxeo-nos-release</id>
+      <activation>
+        <property>
+          <name>m2e.profiles.github.nuxeo.nos.release</name>
+        </property>
+      </activation>
+      <properties>
+        <m2e.profiles.github.nuxeo.nos />
+        <altDeploymentRepository>github-repository:https://maven.pkg.github.com/nuxeo/nos/</altDeploymentRepository>
+        <altSnapshotDeploymentRepository>github-repository::https://maven.pkg.github.com/nuxeo/nos/</altSnapshotDeploymentRepository>
+        <altReleaseDeploymentRepository>github-repository::https://maven.pkg.github.com/nuxeo/nos/</altReleaseDeploymentRepository>
+        <docker.pull.registry>docker.pkg.github.com/nuxeo/nos/</docker.pull.registry>
+        <docker.push.registry>docker.pkg.github.com/nuxeo/nos/</docker.push.registry>
+      </properties>
+    </profile>
+    <profile>
+      <id>github-repository</id>
+      <activation>
+        <property>
+          <name>env.GITHUB_REPOSITORY</name>
+        </property>
+      </activation>
+      <properties>
+        <m2e.profiles.nuxeo-packages />
+        <m2e.profiles.github.nuxeo.nos />
+        <altDeploymentRepository>github-repository:https://maven.pkg.github.com/${env.GITHUB_REPOSITORY/</altDeploymentRepository>
+        <altSnapshotDeploymentRepository>github-repository::https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}/</altSnapshotDeploymentRepository>
+        <altReleaseDeploymentRepository>github-repository::https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}/</altReleaseDeploymentRepository>
+        <docker.pull.registry>docker.pkg.github.com/${env.GITHUB_REPOSITORY}/</docker.pull.registry>
+        <docker.push.registry>docker.pkg.github.com/${env.GITHUB_REPOSITORY}/</docker.push.registry>
+      </properties>
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>github-repository</id>
+          <name>github packages repository</name>
+          <url>https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}/</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>github-repository</id>
+          <name>github packages repository</name>
+          <url>https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}/</url>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
 
 </project>
